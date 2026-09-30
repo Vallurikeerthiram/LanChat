@@ -10,6 +10,8 @@ When you launch Termux on your phone, LanChat automatically boots up an Express 
 
 - **📱 Termux Native / Android Server**: Run the entire chat gateway directly on your phone with `termux-wake-lock`.
 - **🌐 Local Area Network (LAN) Access**: Binds to `0.0.0.0` and automatically detects and displays your Wi-Fi interface IP (e.g. `http://192.168.x.x:3000`).
+- **💾 Device-Persistent Chat History**: Stores the continuous conversation context directly on phone storage (`chat_history.json`). Even when the desktop browser UI keeps a clean minimalist view (latest exchange), the phone maintains the full conversation history for continuous multi-turn reasoning.
+- **📋 Code Blocks with One-Click Copy**: Automatically formats code blocks with syntax styling, language tags, and a dedicated **Copy** button that copies *only* the raw code directly to the clipboard (works seamlessly on LAN HTTP & HTTPS).
 - **⚡ Round-Robin Gemini Key Rotation**: Distributes requests across multiple Gemini API keys in a circular rotation to stay well within free-tier rate limits.
 - **🛡️ 3-Tier Multi-Provider Fallback**:
   1. **Google Gemini** (Multiple API keys rotated sequentially)
@@ -18,7 +20,6 @@ When you launch Termux on your phone, LanChat automatically boots up an Express 
 - **💬 Clean Web Interface**:
   - Real-time millisecond timestamps
   - Delivery ticks (✓ Sent, ✓✓ Processing, ✓✓ Completed)
-  - Markdown code block & syntax formatting
   - Mobile & desktop responsive layout
 
 ---
@@ -29,13 +30,13 @@ When you launch Termux on your phone, LanChat automatically boots up an Express 
 LanChat/
 ├── public/
 │   ├── index.html       # Chat web UI structure
-│   ├── script.js        # Client-side messaging & tick status logic
-│   └── style.css        # Minimalist responsive dark/light styling
+│   ├── script.js        # Client-side messaging, code rendering & copy button logic
+│   └── style.css        # Minimalist responsive dark styling with code blocks
 ├── .env.example         # Template for environment variables and API keys
-├── .gitignore           # Ignores .env and node_modules
+├── .gitignore           # Ignores .env, node_modules, and chat_history.json
 ├── package.json         # Node.js dependencies and run scripts
 ├── package-lock.json
-├── server.js            # Express server, IP detection, round-robin fallback logic
+├── server.js            # Express server, persistent phone history, IP detection, round-robin fallback
 └── README.md
 ```
 
@@ -82,7 +83,8 @@ You will see output similar to:
 =================================================
 🚀 Chatbot Server is running!
 💻 Access it on this machine: http://localhost:3000
-📱 Access it on other devices on WiFi: http://192.168.1.100:3000
+📱 Access it on other devices on WiFi: http://192.168.0.9:3000
+💾 Storing conversation history on device at: /sdcard/LanChat/chat_history.json
 =================================================
 ```
 
@@ -98,7 +100,7 @@ To make LanChat launch automatically whenever you open the Termux app:
    ```bash
    pkg update && pkg install nodejs termux-api -y
    ```
-2. Place the project in `/sdcard/LanChat` (or your Termux home directory).
+2. Place the project in `/sdcard/LanChat`.
 3. Add the following to your `~/.bashrc`:
    ```bash
    termux-wake-lock
