@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LanChat</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <main class="chat-container" id="chat-container">
+            <!-- Messages will be injected here -->
+        </main>
+        <footer class="input-area">
+            <form id="chat-form">
+                <div class="input-wrapper">
+                    <input type="text" id="message-input" placeholder="Type a message" autocomplete="off" required />
+                    <button type="submit" id="send-button" title="Send message">
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </div>
+            </form>
+        </footer>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
