@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Markdown parser with code block wrapper & copy button support
+    // Markdown parser replacing code blocks with ONLY the Copy Button
     function parseMarkdown(text) {
         if (!text) return '';
 
@@ -51,20 +51,27 @@ document.addEventListener('DOMContentLoaded', () => {
         // 1. Extract fenced code blocks with optional language
         let processed = text.replace(/```([a-zA-Z0-9_\-#+.]+)?\r?\n([\s\S]*?)```/g, (match, lang, code) => {
             const id = codeBlocks.length;
-            codeBlocks.push({ lang: (lang || 'code').trim(), code: code.replace(/\r?\n$/, '') });
+            codeBlocks.push({ lang: (lang || '').trim(), code: code.replace(/\r?\n$/, '') });
             return `@@CODE_BLOCK_${id}@@`;
         });
 
-        // 2. Extract inline single backticks
-        processed = processed.replace(/`([^`]+)`/g, (match, inline) => {
-            return `<code class="inline-code">${escapeHtml(inline)}</code>`;
+        // 2. Extract any remaining inline blocks without newline
+        processed = processed.replace(/```([\s\S]*?)```/g, (match, code) => {
+            const id = codeBlocks.length;
+            codeBlocks.push({ lang: '', code: code.replace(/\r?\n$/, '') });
+            return `@@CODE_BLOCK_${id}@@`;
         });
 
-        // 3. Bold & Italic
+        // 3. Extract inline single backticks
+        processed = processed.replace(/`([^`]+)`/g, (match, inline) => {
+            return `<code>${escapeHtml(inline)}</code>`;
+        });
+
+        // 4. Bold & Italic
         processed = processed.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
         processed = processed.replace(/\*([^*]+)\*/g, '<em>$1</em>');
 
-        // 4. Split paragraphs while preserving code block placeholders
+        // 5. Split paragraphs while preserving code block placeholders
         const lines = processed.split(/\r?\n/);
         const htmlParts = [];
         let currentPara = [];
@@ -95,22 +102,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let finalHtml = htmlParts.join('');
 
-        // 5. Replace placeholders with full code container + Copy button
+        // 6. Replace placeholders with JUST the Copy Button (no code displayed)
         finalHtml = finalHtml.replace(/@@CODE_BLOCK_(\d+)@@/g, (match, index) => {
             const block = codeBlocks[Number(index)];
             if (!block) return '';
-            const lang = block.lang || 'code';
+            const langLabel = block.lang ? `${escapeHtml(block.lang)} ` : '';
             const escapedCode = escapeHtml(block.code);
             return `
-                <div class="code-block-container">
-                    <div class="code-block-header">
-                        <span class="code-lang-tag">${escapeHtml(lang)}</span>
-                        <button type="button" class="copy-code-btn" title="Copy only code">
-                            <i class="fa-regular fa-copy"></i>
-                            <span class="copy-label">Copy</span>
-                        </button>
-                    </div>
-                    <pre class="code-block-pre"><code class="code-block-text">${escapedCode}</code></pre>
+                <div class="code-action-container">
+                    <button type="button" class="copy-code-btn" title="Copy code to clipboard">
+                        <i class="fa-regular fa-copy"></i>
+                        <span class="copy-label">Copy ${langLabel}code</span>
+                    </button>
+                    <div class="code-payload" style="display:none;">${escapedCode}</div>
                 </div>
             `;
         });
@@ -163,31 +167,32 @@ document.addEventListener('DOMContentLoaded', () => {
         chatContainer.scrollTop = chatContainer.scrollHeight;
     }
 
-    // Click handler for Copy Code button (delegated to chat container)
+    // Delegated click handler for the Copy Code button
     chatContainer.addEventListener('click', async (e) => {
         const copyBtn = e.target.closest('.copy-code-btn');
         if (!copyBtn) return;
         
-        const container = copyBtn.closest('.code-block-container');
+        const container = copyBtn.closest('.code-action-container');
         if (!container) return;
         
-        const codeElement = container.querySelector('.code-block-text');
-        if (!codeElement) return;
+        const payloadEl = container.querySelector('.code-payload');
+        if (!payloadEl) return;
 
-        // Extracts purely the raw text content of the code element
-        const rawCode = codeElement.textContent;
+        const rawCode = payloadEl.textContent;
 
         try {
             await copyCodeToClipboard(rawCode);
             copyBtn.classList.add('copied');
             const label = copyBtn.querySelector('.copy-label');
             const icon = copyBtn.querySelector('i');
+            const originalLabel = label ? label.textContent : 'Copy code';
+            
             if (label) label.textContent = 'Copied!';
             if (icon) icon.className = 'fa-solid fa-check';
 
             setTimeout(() => {
                 copyBtn.classList.remove('copied');
-                if (label) label.textContent = 'Copy';
+                if (label) label.textContent = originalLabel;
                 if (icon) icon.className = 'fa-regular fa-copy';
             }, 2000);
         } catch (err) {
@@ -233,7 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const aiTime = getTimestamp();
             
             if (response.ok) {
-                // Add model message to UI with rendered code and copy button
+                // Add model message to UI with copy button
                 addMessageToUI('model', data.reply, aiTime);
                 
                 // Update user ticks to blue
